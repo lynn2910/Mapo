@@ -1,12 +1,14 @@
 mod constants;
 mod world;
+mod flycam;
 
 use std::f32::consts::PI;
+use bevy::core_pipeline::fxaa::Fxaa;
 use bevy::core_pipeline::tonemapping::Tonemapping;
-use bevy::dev_tools::DevToolsPlugin;
 use bevy::dev_tools::fps_overlay::{FpsOverlayConfig, FpsOverlayPlugin};
-use bevy::pbr::{CascadeShadowConfigBuilder, VolumetricFogSettings, VolumetricLight};
+use bevy::pbr::{VolumetricFogSettings, VolumetricLight};
 use bevy::prelude::*;
+use crate::flycam::FlyCam;
 
 fn main() {
     let mut app = App::new();
@@ -30,7 +32,8 @@ fn main() {
                 }),
                 ..default()
             })
-        );
+        )
+        .add_plugins(flycam::NoCameraPlayerPlugin);
 
     #[cfg(feature = "diagnostic")]
     app.add_plugins(
@@ -44,6 +47,7 @@ fn main() {
             },
         },
     );
+
 
     app.init_state::<GameStatus>();
 
@@ -67,7 +71,7 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>
 ){
     commands
-        .spawn(
+        .spawn((
             Camera3dBundle {
                 transform: Transform::from_xyz(10.0, 12.0, 16.0)
                     .looking_at(Vec3::ZERO, Vec3::Y),
@@ -77,11 +81,12 @@ fn setup(
                 },
                 tonemapping: Tonemapping::TonyMcMapface,
                 ..default()
-            }
-        )
+            },
+            FlyCam
+        ))
         .insert(constants::graphic_settings::DEFAULT_BLOOM_SETTINGS)
-        .insert(VolumetricFogSettings { ambient_intensity: 0., ..default() });
-    
+        .insert(VolumetricFogSettings { ..default() });
+
     commands.spawn(constants::graphic_settings::DEFAULT_BLOOM_SETTINGS);
 
     commands.spawn(
@@ -107,7 +112,7 @@ fn setup(
             },
             ..default()
         },
-        VolumetricLight
+        VolumetricLight,
+        Fxaa::default()
     ));
-
 }
