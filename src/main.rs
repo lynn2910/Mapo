@@ -9,6 +9,7 @@ use bevy::dev_tools::fps_overlay::{FpsOverlayConfig, FpsOverlayPlugin};
 use bevy::pbr::{VolumetricFogSettings, VolumetricLight};
 use bevy::prelude::*;
 use crate::flycam::FlyCam;
+use crate::world::WorldPlugin;
 
 fn main() {
     let mut app = App::new();
@@ -51,6 +52,8 @@ fn main() {
 
     app.init_state::<GameStatus>();
 
+    app.add_plugins(WorldPlugin);
+
     // add systems
     app.add_systems(Startup, setup);
 
@@ -66,9 +69,7 @@ enum GameStatus {
 
 
 fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>
+    mut commands: Commands
 ){
     commands
         .spawn((
@@ -85,17 +86,9 @@ fn setup(
             FlyCam
         ))
         .insert(constants::graphic_settings::DEFAULT_BLOOM_SETTINGS)
-        .insert(VolumetricFogSettings { ..default() });
+        .insert(VolumetricFogSettings { ambient_intensity: 0.5, absorption: 0.15, density: 0.05, ..default() });
 
     commands.spawn(constants::graphic_settings::DEFAULT_BLOOM_SETTINGS);
-
-    commands.spawn(
-        PbrBundle {
-            mesh: meshes.add(Cuboid::new(2., 2., 2.)),
-            material: materials.add(Color::WHITE),
-            ..default()
-        }
-    );
 
     // spawn the sun
     commands.spawn((
