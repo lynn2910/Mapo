@@ -4,10 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-diagnostic = ["bevy_screen_diagnostics"]
+diagnostic = ["bevy/bevy_dev_tools"]
 
 [dependencies]
-bevy = "0.13.2"
-bevy_screen_diagnostics = { version = "0.5.0", optional = true }
-bevy_flycam = "0.13.0"
+bevy = "0.14.0"
 block-mesh = "0.2.0"
