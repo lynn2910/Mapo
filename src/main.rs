@@ -1,10 +1,12 @@
 mod constants;
 mod world;
 
+use std::f32::consts::PI;
 use bevy::core_pipeline::tonemapping::Tonemapping;
+use bevy::dev_tools::DevToolsPlugin;
+use bevy::dev_tools::fps_overlay::{FpsOverlayConfig, FpsOverlayPlugin};
+use bevy::pbr::{CascadeShadowConfigBuilder, VolumetricFogSettings, VolumetricLight};
 use bevy::prelude::*;
-#[cfg(feature = "diagnostic")]
-use bevy_screen_diagnostics::{ScreenDiagnosticsPlugin, ScreenFrameDiagnosticsPlugin};
 
 fn main() {
     let mut app = App::new();
@@ -28,18 +30,27 @@ fn main() {
                 }),
                 ..default()
             })
-        )
-        .add_plugins(bevy_flycam::prelude::PlayerPlugin);
-    
+        );
+
     #[cfg(feature = "diagnostic")]
-    app.add_plugins((ScreenDiagnosticsPlugin::default(), ScreenFrameDiagnosticsPlugin));
+    app.add_plugins(
+        FpsOverlayPlugin {
+            config: FpsOverlayConfig {
+                text_config: TextStyle {
+                    font_size: 20.0,
+                    color: Color::WHITE,
+                    font: default(),
+                },
+            },
+        },
+    );
 
     app.init_state::<GameStatus>();
 
     // add systems
     app.add_systems(Startup, setup);
 
-    app.run()
+    app.run();
 }
 
 #[derive(Default, Clone, Copy, Eq, PartialEq, Hash, Debug, States)]
@@ -55,19 +66,22 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>
 ){
-    // commands.spawn((
-    //     Camera3dBundle {
-    //         transform: Transform::from_xyz(10.0, 12.0, 16.0)
-    //             .looking_at(Vec3::ZERO, Vec3::Y),
-    //         camera: Camera {
-    //             hdr: false,
-    //             ..default()
-    //         },
-    //         tonemapping: Tonemapping::TonyMcMapface,
-    //         ..default()
-    //     },
-    //     constants::graphic_settings::DEFAULT_BLOOM_SETTINGS
-    // ));
+    commands
+        .spawn(
+            Camera3dBundle {
+                transform: Transform::from_xyz(10.0, 12.0, 16.0)
+                    .looking_at(Vec3::ZERO, Vec3::Y),
+                camera: Camera {
+                    hdr: false,
+                    ..default()
+                },
+                tonemapping: Tonemapping::TonyMcMapface,
+                ..default()
+            }
+        )
+        .insert(constants::graphic_settings::DEFAULT_BLOOM_SETTINGS)
+        .insert(VolumetricFogSettings { ambient_intensity: 0., ..default() });
+    
     commands.spawn(constants::graphic_settings::DEFAULT_BLOOM_SETTINGS);
 
     commands.spawn(
@@ -77,4 +91,23 @@ fn setup(
             ..default()
         }
     );
+
+    // spawn the sun
+    commands.spawn((
+        DirectionalLightBundle {
+            directional_light: DirectionalLight {
+                illuminance: light_consts::lux::OVERCAST_DAY,
+                shadows_enabled: true,
+                ..default()
+            },
+            transform: Transform {
+                translation: Vec3::new(0.0, 2.0, 0.0),
+                rotation: Quat::from_rotation_x(-PI / 4.),
+                ..default()
+            },
+            ..default()
+        },
+        VolumetricLight
+    ));
+
 }
