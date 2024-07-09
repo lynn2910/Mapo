@@ -5,9 +5,9 @@ mod flycam;
 use std::f32::consts::PI;
 use bevy::core_pipeline::fxaa::Fxaa;
 use bevy::core_pipeline::tonemapping::Tonemapping;
-use bevy::dev_tools::fps_overlay::{FpsOverlayConfig, FpsOverlayPlugin};
 use bevy::pbr::{VolumetricFogSettings, VolumetricLight};
 use bevy::prelude::*;
+use bevy::render::view::{GpuCulling, NoCpuCulling};
 use crate::flycam::FlyCam;
 use crate::world::WorldPlugin;
 
@@ -37,18 +37,21 @@ fn main() {
         .add_plugins(flycam::NoCameraPlayerPlugin);
 
     #[cfg(feature = "diagnostic")]
-    app.add_plugins(
-        FpsOverlayPlugin {
-            config: FpsOverlayConfig {
-                text_config: TextStyle {
-                    font_size: 20.0,
-                    color: Color::WHITE,
-                    font: default(),
+    {
+        use bevy::dev_tools::fps_overlay::{FpsOverlayConfig, FpsOverlayPlugin};
+        
+        app.add_plugins(
+            FpsOverlayPlugin {
+                config: FpsOverlayConfig {
+                    text_config: TextStyle {
+                        font_size: 20.0,
+                        color: Color::WHITE,
+                        font: default(),
+                    },
                 },
             },
-        },
-    );
-
+        );
+    }
 
     app.init_state::<GameStatus>();
 
@@ -86,7 +89,7 @@ fn setup(
             FlyCam
         ))
         .insert(constants::graphic_settings::DEFAULT_BLOOM_SETTINGS)
-        .insert(VolumetricFogSettings { ambient_intensity: 0.5, absorption: 0.15, density: 0.05, ..default() });
+        .insert(VolumetricFogSettings { ambient_intensity: 0.5, absorption: 0.15, density: 0.02, ..default() });
 
     commands.spawn(constants::graphic_settings::DEFAULT_BLOOM_SETTINGS);
 
@@ -106,6 +109,17 @@ fn setup(
             ..default()
         },
         VolumetricLight,
-        Fxaa::default()
+        Fxaa::default(),
+        // Enable the GPU Frustum culling and disable the cpu culling
+        GpuCulling,
+        NoCpuCulling
     ));
+
+    // Insert ambient light
+    commands.insert_resource(
+        AmbientLight {
+            color: Default::default(),
+            brightness: light_consts::lux::AMBIENT_DAYLIGHT,
+        }
+    );
 }
